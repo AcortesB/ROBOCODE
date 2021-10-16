@@ -1,13 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-package RobotEnPruebas;
+
+package entrega1;
 
 import robocode.AdvancedRobot;
 import java.awt.Color;
-import robocode.HitByBulletEvent;
 import robocode.ScannedRobotEvent;
 import robocode.HitWallEvent;
 /**
@@ -16,8 +11,8 @@ import robocode.HitWallEvent;
  */
 public class Fresito extends AdvancedRobot {
     
-    //és una variable amb la que decidirem a quina direcció moure'ns quan haguem d'evitar quelcom obstacle 
-    //la fem així per a que vagi variant la direcció cada cop que esquivi, segons sigui positiva o negativa
+    /* és una variable amb la que decidirem a quina direcció moure'ns quan haguem d'evitar quelcom obstacle 
+    la fem així per a que vagi variant la direcció cada cop que esquivi, segons sigui positiva o negativa */
     int canviDireccio = -1;
     
     //numero que utilitzarem per establir una velocitat màxima random per variar-la
@@ -32,7 +27,9 @@ public class Fresito extends AdvancedRobot {
     //la utilitzem per predir la propera velocitat que portarà l'enemic
     double ultimaVelocitatEnemic;
     
-
+    /***Radar gira fins que troba un objectiu. Moviment back&go constant. 
+     * S'estableixen els colors del robot i que el cos, 
+     * l'arma i el radar tinguin moviment independent entre ells.***/
     public void run() {
         
         //li posem els colors que volguem
@@ -51,14 +48,16 @@ public class Fresito extends AdvancedRobot {
         ahead(200);
         back(200);
     }
-
+    
+    /***Valora si és a prop o lluny de l'objectiu i preveu conseqüentment la posició futura de l'enemic per disparar.
+     * Fixa un valor random com a velocitat màxima del nostre robot en aquest torn (perque no sigui predictible).
+     ***/
     public void onScannedRobot( ScannedRobotEvent e ) {
-        
 
         angleAbsolutEnemic = e.getBearingRadians() + getHeadingRadians();
-        // posicio de l'enemic respecte al nostre tanc + la direcció a la que estem mirant
+        //posicio de l'enemic respecte al nostre tanc + la direcció a la que estem mirant
         ultimaVelocitatEnemic = e.getVelocity() * Math.sin(e.getHeadingRadians() - angleAbsolutEnemic);
-        // velocitat de l'enemic * sin(la direcció on està encarat l'enemic - (posicio de l'enemic respecte al nostre tank + la direcció a la que estem mirant)
+        //velocitat de l'enemic * sin(la direcció on està encarat l'enemic - (posicio de l'enemic respecte al nostre tank + la direcció a la que estem mirant)
         
         //li restem al gir del radar el tros que encara li quedava per fer
         setTurnRadarLeftRadians(getRadarTurnRemainingRadians());
@@ -88,7 +87,7 @@ public class Fresito extends AdvancedRobot {
             //preparem el canó
             apuntaCano(20);
             
-            //ens apropem a la posició predita que ocuparà l'enemic 
+            //ens apropem a la posició predita que ocuparà l'enemic
             setTurnRightRadians(robocode.util.Utils.normalRelativeAngle(angleAbsolutEnemic-getHeadingRadians()+ultimaVelocitatEnemic/getVelocity()));
             setAhead((e.getDistance() - 140)*canviDireccio);
             
@@ -99,7 +98,7 @@ public class Fresito extends AdvancedRobot {
     
     }
     
-    //funció per disparar si tenim el canó fred
+    /***Dispara si el robot no té calent el canó. Dispara adaptant la potència del tir en base a la ditància a la que es trobi el robot enemic.***/
     public void disparaSiCanoFred( ScannedRobotEvent e ){
         //si no tenim el canó calent dispararem
             if ( getGunHeat() == 0 )
@@ -110,16 +109,16 @@ public class Fresito extends AdvancedRobot {
                 */
     }
     
-    //funció per apuntar el canó on volguem disparar
+    /***Apunta el canó del robot on volguem disparar.Apunta una mica endavantat a la posició propera calculada de l'enemic.***/
     public void apuntaCano (int num){
         //apuntem el canó una mica endavantat de la posició calculada del nostre enemic
         mocCanoTant = robocode.util.Utils.normalRelativeAngle(angleAbsolutEnemic- getGunHeadingRadians()+ultimaVelocitatEnemic/num);
         setTurnGunRightRadians(mocCanoTant);
     }
     
-    //si xoquem contra una paret 
+    /***Fa moure el robot en direcció contrària a la paret amb la que ha xocat per allunyar-se d'ella.***/
     public void onHitWall( HitWallEvent e ){
-        //ens mourem en direcció contraria a la paret per allunyar-no d'ella
         canviDireccio = canviDireccio * -1 ; //ho multipliquem per -1 per a que canvii el valor de la variable
     }
 }
+   

@@ -12,7 +12,7 @@ import robocode.ScannedRobotEvent;
 import robocode.HitWallEvent;
 /**
  *
- * @author andrea
+ * @author lluis & andrea
  */
 public class Fresito extends AdvancedRobot {
     
@@ -26,10 +26,11 @@ public class Fresito extends AdvancedRobot {
     //variable que guarda quant haurem de moure el canó per disparar al target
     double mocCanoTant;
     
-    double absBearing; //TODO coment enemies absolute bearing
+    //la utilitzem per predir la posició en la que es trobarà l'enemic
+    double angleAbsolutEnemic;
     
-    
-    double latVel; //TODO coment enemies later velocity
+    //la utilitzem per predir la propera velocitat que portarà l'enemic
+    double ultimaVelocitatEnemic;
     
 
     public void run() {
@@ -39,6 +40,7 @@ public class Fresito extends AdvancedRobot {
         
         //per poder moure el radar i el cos del tank per separat
         setAdjustRadarForRobotTurn(true);
+        
         //per poder moure el cano i el cos del tank per separat
         setAdjustGunForRobotTurn(true);
         
@@ -53,26 +55,28 @@ public class Fresito extends AdvancedRobot {
     public void onScannedRobot( ScannedRobotEvent e ) {
         
 
-        absBearing = e.getBearingRadians() + getHeadingRadians();
-        latVel = e.getVelocity() * Math.sin(e.getHeadingRadians() -absBearing);
+        angleAbsolutEnemic = e.getBearingRadians() + getHeadingRadians();
+        // posicio de l'enemic respecte al nostre tanc + la direcció a la que estem mirant
+        ultimaVelocitatEnemic = e.getVelocity() * Math.sin(e.getHeadingRadians() - angleAbsolutEnemic);
+        // velocitat de l'enemic * sin(la direcció on està encarat l'enemic - (posicio de l'enemic respecte al nostre tank + la direcció a la que estem mirant)
         
-        //TODO coment
+        //li restem al gir del radar el tros que encara li quedava per fer
         setTurnRadarLeftRadians(getRadarTurnRemainingRadians());
         
-        //amb un random entre 9 i 15 per a que no sigui predictable fixem un valor per a la velocitat màxima d'aquest torn
-        //TODO: velocitat maxima en el robocode?
-        numeroRandom = Math.random() * (15 - 9) + 9;
-        setMaxVelocity((10*numeroRandom)+10); //TODO: et sembla bé que sigui 10? posava 12, però no varia el num de 1sts
+        //Nota: maxima velocitat tanc robocode: 8 pixels/torn
+        //amb un random entre 0.9 i 8 per a que no sigui predictable fixem un valor per a la velocitat màxima d'aquest torn
+        numeroRandom = Math.random() * (8 - 0.9) + 0.9;
+        setMaxVelocity((10*numeroRandom)+10);
         
         //si estem a menys o a 150 pixels de distància de l'enemic
         if ( e.getDistance() <= 150) {
             
             //preparem el canó
-            apuntaCano(15);
+            apuntaCano(10);
             
             //ens posem perpendicular a l'enemic
             setTurnLeft(-90-e.getBearing());
-            setAhead((e.getDistance() - 140)*canviDireccio); //TODO
+            setAhead((e.getDistance() - 140)*canviDireccio);
             
             //disparem
             disparaSiCanoFred(e);
@@ -82,10 +86,10 @@ public class Fresito extends AdvancedRobot {
         else{
             
             //preparem el canó
-            apuntaCano(22);
+            apuntaCano(20);
             
-            //TODO coment
-            setTurnRightRadians(robocode.util.Utils.normalRelativeAngle(absBearing-getHeadingRadians()+latVel/getVelocity()));//drive towards the enemies predicted future location
+            //ens apropem a la posició predita que ocuparà l'enemic 
+            setTurnRightRadians(robocode.util.Utils.normalRelativeAngle(angleAbsolutEnemic-getHeadingRadians()+ultimaVelocitatEnemic/getVelocity()));
             setAhead((e.getDistance() - 140)*canviDireccio);
             
             //disparem
@@ -108,8 +112,9 @@ public class Fresito extends AdvancedRobot {
     
     //funció per apuntar el canó on volguem disparar
     public void apuntaCano (int num){
-        mocCanoTant = robocode.util.Utils.normalRelativeAngle(absBearing- getGunHeadingRadians()+latVel/num);//amount to turn our gun, lead just a little bit
-        setTurnGunRightRadians(mocCanoTant); //turn our gun
+        //apuntem el canó una mica endavantat de la posició calculada del nostre enemic
+        mocCanoTant = robocode.util.Utils.normalRelativeAngle(angleAbsolutEnemic- getGunHeadingRadians()+ultimaVelocitatEnemic/num);
+        setTurnGunRightRadians(mocCanoTant);
     }
     
     //si xoquem contra una paret 
